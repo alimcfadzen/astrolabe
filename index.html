@@ -352,6 +352,7 @@ input[type=date]:focus{outline:none;border-color:rgba(0,0,0,.5)}
 
 #datePicker::-webkit-calendar-picker-indicator{display:none}
 #btnDateMode::-webkit-calendar-picker-indicator{display:none}
+.leaflet-top,.leaflet-bottom{z-index:500 !important}
 </style>
 </head>
 <body>
@@ -724,7 +725,7 @@ input[type=date]:focus{outline:none;border-color:rgba(0,0,0,.5)}
 let map, markerA=null, markerB=null;
 let latA=null,lonA=null,latB=null,lonB=null;
 let pinMode=null;
-let showSun=true,showMoon=true,showMW=false,showISS=false;
+let showSun=true,showMoon=true,showMW=true,showISS=false;
 let issTLE=null, issTransits=[], issLastFetch=null, issFetching=false;
 let useLocalTime=true; // default to browser local time
 let showRise=true,showSet=true;
@@ -940,7 +941,7 @@ function applyState(s) {
   // Toggle states
   showSun  = s.showSun  !== undefined ? s.showSun  : true;
   showMoon = s.showMoon !== undefined ? s.showMoon : true;
-  showMW   = s.showMW   !== undefined ? s.showMW   : false;
+  showMW   = true; // always show MW
   showRise = s.showRise !== undefined ? s.showRise : true;
   showSet  = s.showSet  !== undefined ? s.showSet  : true;
   yearMode = s.yearMode || false;
@@ -1002,9 +1003,34 @@ function initMap() {
   }
 
   map = L.map('map', { center: startCenter, zoom: startZoom });
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution:'© OpenStreetMap', maxZoom:18
-  }).addTo(map);
+  window.streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution:'© OpenStreetMap', maxZoom:19
+  });
+  window.satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    attribution:'© Esri', maxZoom:19
+  });
+  window.streetLayer.addTo(map);
+  window.isSatellite = false;
+
+  // Satellite toggle control below zoom buttons — added after map ready
+  setTimeout(() => {
+    const SatControl = L.Control.extend({
+      options: { position: 'topleft' },
+      onAdd: function() {
+        const btn = L.DomUtil.create('button', '');
+        btn.id = 'btnMapStyle';
+        btn.title = 'Toggle satellite view';
+        btn.innerHTML = '🛰';
+        btn.style.cssText = 'width:34px;height:34px;background:rgba(13,17,23,0.9);border:2px solid rgba(0,0,0,0.3);border-radius:4px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 5px rgba(0,0,0,0.4);margin-top:4px;line-height:1';
+        btn.onmouseover = () => { if (!window.isSatellite) btn.style.background = 'rgba(88,166,255,0.2)'; };
+        btn.onmouseout  = () => { if (!window.isSatellite) btn.style.background = 'rgba(13,17,23,0.9)'; };
+        L.DomEvent.disableClickPropagation(btn);
+        btn.onclick = toggleMapStyle;
+        return btn;
+      }
+    });
+    new SatControl().addTo(map);
+  }, 500);
 
   map.on('click', onMapClick);
   map.on('mousemove', onMapHover);
@@ -1573,10 +1599,8 @@ function updateSliderReadout() {
     const mp = moonAltAz(jd,latA,lonA);
     ms = `☽ ${mp.az.toFixed(1)}° ${mp.alt>0?'↑'+mp.alt.toFixed(1)+'°':'▼'}`;
   }
-  if (showMW) {
-    const mwp = mwAltAz(jd,latA,lonA);
-    mws = `✦ MW ${mwp.az.toFixed(1)}° ${mwp.alt>0?'↑'+mwp.alt.toFixed(1)+'°':'▼'}`;
-  }
+  { const mwp = mwAltAz(jd,latA,lonA);
+    mws = `✦ MW ${mwp.az.toFixed(1)}° ${mwp.alt>0?'↑'+mwp.alt.toFixed(1)+'°':'▼'}`; }
   document.getElementById('readout-sun').textContent = ss;
   document.getElementById('readout-moon').textContent = ms;
   document.getElementById('readout-mw').textContent = mws;
@@ -3008,7 +3032,7 @@ function drawLine(ctx,lat,lon,az,color,alpha,width,km) {
   const end=azEndPoint(lat,lon,az,km||2500);
   const p0=map.latLngToContainerPoint([lat,lon]);
   const p1=map.latLngToContainerPoint(end);
-  ctx.save(); ctx.globalAlpha=alpha; ctx.strokeStyle=color; ctx.lineWidth=width;
+  ctx.save(); ctx.globalAlpha=alpha; ctx.strokeStyle=color; ctx.lineWidth=width+4;
   ctx.beginPath(); ctx.moveTo(p0.x,p0.y); ctx.lineTo(p1.x,p1.y); ctx.stroke(); ctx.restore();
 }
 
@@ -3318,18 +3342,18 @@ function redraw() {
     const fade = timelineActive;
     if(showSun){
       const s=getRiseSet(latA,lonA,date,'sun');
-      if(showRise&&s.riseAz!=null&&!hiddenEvents.sunRise){drawLine(ctx,latA,lonA,s.riseAz,'#f59e0b',fade?.3:.95,fade?1.5:2.5);if(!fade)drawLabel(ctx,latA,lonA,s.riseAz,'#f59e0b',`Sunrise ${s.riseAz.toFixed(1)}°`);}
-      if(showSet &&s.setAz !=null&&!hiddenEvents.sunSet){drawLine(ctx,latA,lonA,s.setAz, '#f97316',fade?.3:.95,fade?1.5:2.5);if(!fade)drawLabel(ctx,latA,lonA,s.setAz, '#f97316',`Sunset ${s.setAz.toFixed(1)}°`);}
+      if(showRise&&s.riseAz!=null&&!hiddenEvents.sunRise){drawLine(ctx,latA,lonA,s.riseAz,'#fef08a',fade?.5:.95,fade?1.8:3.5);if(!fade)drawLabel(ctx,latA,lonA,s.riseAz,'#fef08a',`Sunrise ${s.riseAz.toFixed(1)}°`);}
+      if(showSet &&s.setAz !=null&&!hiddenEvents.sunSet){drawLine(ctx,latA,lonA,s.setAz, '#f97316',fade?.5:.95,fade?1.8:3.5);if(!fade)drawLabel(ctx,latA,lonA,s.setAz, '#f97316',`Sunset ${s.setAz.toFixed(1)}°`);}
     }
     if(showMoon){
       const m=getRiseSet(latA,lonA,date,'moon');
-      if(showRise&&m.riseAz!=null&&!hiddenEvents.moonRise){drawLine(ctx,latA,lonA,m.riseAz,'#818cf8',fade?.3:.95,fade?1.2:2);if(!fade)drawLabel(ctx,latA,lonA,m.riseAz,'#818cf8',`Moonrise ${m.riseAz.toFixed(1)}°`);}
-      if(showSet &&m.setAz !=null&&!hiddenEvents.moonSet){drawLine(ctx,latA,lonA,m.setAz, '#a78bfa',fade?.3:.95,fade?1.2:2);if(!fade)drawLabel(ctx,latA,lonA,m.setAz, '#a78bfa',`Moonset ${m.setAz.toFixed(1)}°`);}
+      if(showRise&&m.riseAz!=null&&!hiddenEvents.moonRise){drawLine(ctx,latA,lonA,m.riseAz,'#c084fc',fade?.5:.95,fade?1.5:3);if(!fade)drawLabel(ctx,latA,lonA,m.riseAz,'#c084fc',`Moonrise ${m.riseAz.toFixed(1)}°`);}
+      if(showSet &&m.setAz !=null&&!hiddenEvents.moonSet){drawLine(ctx,latA,lonA,m.setAz, '#7c3aed',fade?.5:.95,fade?1.5:3);if(!fade)drawLabel(ctx,latA,lonA,m.setAz, '#7c3aed',`Moonset ${m.setAz.toFixed(1)}°`);}
     }
     {
       const mw=getRiseSet(latA,lonA,date,'mw');
-      if(showRise&&mw.riseAz!=null&&!hiddenEvents.mwRise){drawLine(ctx,latA,lonA,mw.riseAz,'#4ade80',fade?.3:.9,fade?1.2:2);if(!fade)drawLabel(ctx,latA,lonA,mw.riseAz,'#4ade80',`MW Rise ${mw.riseAz.toFixed(1)}°`);}
-      if(showSet &&mw.setAz !=null&&!hiddenEvents.mwSet){drawLine(ctx,latA,lonA,mw.setAz, '#4ade80',fade?.3:.9,fade?1.2:2);if(!fade)drawLabel(ctx,latA,lonA,mw.setAz, '#4ade80',`MW Set ${mw.setAz.toFixed(1)}°`);}
+      if(showRise&&mw.riseAz!=null&&!hiddenEvents.mwRise){drawLine(ctx,latA,lonA,mw.riseAz,'#4ade80',fade?.5:.9,fade?1.5:3);if(!fade)drawLabel(ctx,latA,lonA,mw.riseAz,'#4ade80',`MW Rise ${mw.riseAz.toFixed(1)}°`);}
+      if(showSet &&mw.setAz !=null&&!hiddenEvents.mwSet){drawLine(ctx,latA,lonA,mw.setAz, '#2dd4bf',fade?.5:.9,fade?1.5:3);if(!fade)drawLabel(ctx,latA,lonA,mw.setAz, '#2dd4bf',`MW Set ${mw.setAz.toFixed(1)}°`);}
     }
   }
 
@@ -3338,25 +3362,19 @@ function redraw() {
     const t=sliderDatetime(), jd=toJD(t);
     if(showSun){
       const sp=sunAltAz(jd,latA,lonA), above=sp.alt>-0.833;
-      const col=above?'#fde68a':'#78350f';
+      const col=above?'#facc15':'#a16207';
       drawLine(ctx,latA,lonA,sp.az,col,above?.95:.35,2.5);
-      drawDot(ctx,latA,lonA,sp.az,above?'#fde68a':'#92400e',400);
+      drawDot(ctx,latA,lonA,sp.az,above?'#facc15':'#a16207',400);
       drawLabel(ctx,latA,lonA,sp.az,col,`☀ ${sp.az.toFixed(1)}°${above?' ↑'+sp.alt.toFixed(0)+'°':' ▼'}`,480);
     }
     if(showMoon){
       const mp=moonAltAz(jd,latA,lonA), above=mp.alt>0;
-      const col=above?'#c7d2fe':'#312e81';
+      const col=above?'#60a5fa':'#1e40af';
       drawLine(ctx,latA,lonA,mp.az,col,above?.95:.35,2);
-      drawDot(ctx,latA,lonA,mp.az,above?'#c7d2fe':'#4338ca',350);
+      drawDot(ctx,latA,lonA,mp.az,above?'#60a5fa':'#1e40af',350);
       drawLabel(ctx,latA,lonA,mp.az,col,`☽ ${mp.az.toFixed(1)}°${above?' ↑'+mp.alt.toFixed(0)+'°':' ▼'}`,420);
     }
-    {
-      const mwp=mwAltAz(jd,latA,lonA), above=mwp.alt>0;
-      const col=above?'#86efac':'rgba(74,222,128,0.25)';
-      drawLine(ctx,latA,lonA,mwp.az,col,above?.9:.2,above?2:1.5);
-      drawDot(ctx,latA,lonA,mwp.az,above?'#86efac':'rgba(74,222,128,0.2)',370);
-      drawLabel(ctx,latA,lonA,mwp.az,col,`✦ MW ${mwp.az.toFixed(1)}°${above?' ↑'+mwp.alt.toFixed(0)+'°':' ▼'}`,440);
-    }
+    // MW live line removed — rise/set lines shown above
   }
 
 
