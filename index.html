@@ -1172,6 +1172,8 @@ function initMap() {
         const hasSavedView = savedState && savedState.mapCenter && savedState.latA != null && savedState.latA !== "null";
         if (!hasSavedView) flyToVisible(lat, lng, 15);
         // Auto-place Observer pin only if none was restored
+        hiddenEvents.sunRise = false;
+        hiddenEvents.sunSet  = false;
         if (latA === null) {
           placeMarker('a', lat, lng);
           if (!hasSavedView) flyToVisible(lat, lng, 15);
@@ -1310,6 +1312,8 @@ function goToMyLocation() {
       hideGeoStatus();
       const { latitude: lat, longitude: lng } = pos.coords;
       cancelPinMode();
+      hiddenEvents.sunRise = false;
+      hiddenEvents.sunSet  = false;
       placeMarker('a', lat, lng);
       flyToVisible(lat, lng, 15);
       syncPinButtons();
@@ -1437,6 +1441,8 @@ function placeMarker(which, lat, lng) {
   // Will call drawAltGraph after to resize canvas with tide section
   if (which === 'a') {
     dropPOIIfFar(lat, lng);
+    hiddenEvents.sunRise = false;
+    hiddenEvents.sunSet  = false;
     latA = lat; lonA = lng;
     if (markerA) map.removeLayer(markerA);
     markerA = L.marker([lat, lng], {
