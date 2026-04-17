@@ -71,11 +71,11 @@ input[type=date]:focus{outline:none;border-color:rgba(0,0,0,.5)}
 .btn.sun-on{background:rgba(245,158,11,.15);border-color:var(--sun-rise);color:var(--sun-rise)}
 .btn.moon-on{background:rgba(129,140,248,.15);border-color:var(--moon-rise);color:var(--moon-rise)}
 .btn.mw-on{background:rgba(74,222,128,.15);border-color:var(--mw);color:var(--mw)}
-.pin-btn-a{background:rgba(239,68,68,.15)!important;border-color:#ef4444!important;color:#ef4444!important}
-.pin-btn-b{background:rgba(34,211,238,.15)!important;border-color:#22d3ee!important;color:#22d3ee!important}
+.pin-btn-a{background:var(--surface)!important;border-color:#ef4444!important;color:var(--text)!important}
+.pin-btn-b{background:var(--surface)!important;border-color:#22d3ee!important;color:var(--text)!important}
 .pin-btn-off{border-color:var(--border)!important;color:var(--muted)!important;background:var(--bg3)!important}
-.pin-placed-a{background:rgba(239,68,68,.15)!important;border-color:#ef4444!important;color:#ef4444!important;font-weight:500}
-.pin-placed-b{background:rgba(34,211,238,.15)!important;border-color:#22d3ee!important;color:#22d3ee!important;font-weight:500}
+.pin-placed-a{background:var(--surface)!important;border-color:#ef4444!important;color:var(--text)!important;font-weight:500}
+.pin-placed-b{background:var(--surface)!important;border-color:#22d3ee!important;color:var(--text)!important;font-weight:500}
 
 /* MAP */
 #map-container{flex:1;position:relative;overflow:hidden}
@@ -1370,28 +1370,29 @@ function syncPinButtons() {
   const btnA = document.getElementById('btnPinA');
   const btnB = document.getElementById('btnPinB');
 
+  const rA = '#ef4444', rB = '#22d3ee';
   if (pinMode === 'a') {
     btnA.className = 'btn pin-btn-a';
-    btnA.textContent = '▸ Observer…';
+    btnA.innerHTML = `<span style="color:${rA}">▸</span> Observer…`;
     btnB.className = 'btn pin-btn-off';
-    btnB.textContent = latB ? '● POI' : '⊕ POI';
+    btnB.innerHTML = latB ? `<span style="color:${rB}">●</span> POI` : `<span style="color:${rB}">⊕</span> POI`;
   } else if (pinMode === 'b') {
     btnB.className = 'btn pin-btn-b';
-    btnB.textContent = '▸ POI…';
+    btnB.innerHTML = `<span style="color:${rB}">▸</span> POI…`;
     btnA.className = latA ? 'btn pin-placed-a' : 'btn pin-btn-off';
-    btnA.textContent = latA ? '● Observer' : '⊕ Observer';
+    btnA.innerHTML = latA ? `<span style="color:${rA}">●</span> Observer` : `<span style="color:${rA}">⊕</span> Observer`;
   } else {
     // No active placement mode
     btnA.className = latA ? 'btn pin-placed-a' : 'btn';
-    btnA.textContent = latA ? '● Observer' : '⊕ Observer';
+    btnA.innerHTML = latA ? `<span style="color:${rA}">●</span> Observer` : `<span style="color:${rA}">⊕</span> Observer`;
     if (latA === null) {
       btnB.className = 'btn';
-      btnB.textContent = '⊕ POI';
+      btnB.innerHTML = `<span style="color:${rB}">⊕</span> POI`;
       btnB.style.opacity = '0.4';
       btnB.style.cursor = 'not-allowed';
     } else {
       btnB.className = latB ? 'btn pin-placed-b' : 'btn';
-      btnB.textContent = latB ? '● POI' : '⊕ POI';
+      btnB.innerHTML = latB ? `<span style="color:${rB}">●</span> POI` : `<span style="color:${rB}">⊕</span> POI`;
       btnB.style.opacity = '';
       btnB.style.cursor = '';
     }
@@ -2973,7 +2974,7 @@ function syncMobileButtons() {
   ];
   pairs.forEach(([d,m]) => {
     const de = document.getElementById(d), me = document.getElementById(m);
-    if (de && me) me.className = de.className;
+    if (de && me) { me.className = de.className; me.innerHTML = de.innerHTML; }
   });
   // Sync date
   const dp = document.getElementById('datePicker'), dpm = document.getElementById('datePicker-m');
