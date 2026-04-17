@@ -2725,35 +2725,39 @@ async function doSearch(asYouType = false) {
     }
   }
 
-  // Nominatim geocoding
+  // Photon geocoding (typeahead-optimised, OSM data)
   try {
-    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=5&addressdetails=1`;
-    const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
-    const results = await res.json();
-    if (results.length === 0) {
-      showSearchResults([{ display_name: 'No results found', lat: null }]);
-    } else {
-      showSearchResults(results);
-    }
+    const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=5&lang=en`;
+    const res = await fetch(url);
+    const data = await res.json();
+    const features = data.features || [];
+    showSearchResults(features);
   } catch(e) {
     console.warn('Search failed:', e);
   }
 }
 
-function showSearchResults(results) {
+function showSearchResults(features) {
   const box = document.getElementById('search-results');
-  box.innerHTML = results.map((r, i) => {
-    if (!r.lat) return `<div class="sr-item" style="color:var(--muted)">${r.display_name}</div>`;
-    const a = r.address || {};
-    const place = r.display_name.split(', ')[0];
-    const state = a.state || '';
-    const country = (a.country && a.country !== 'United States') ? a.country : '';
-    const sub = [state, country].filter(Boolean).join(', ') || r.display_name.split(', ').slice(1, 3).join(', ');
+  if (!features.length) {
+    box.innerHTML = '<div class="sr-item" style="color:var(--muted)">No results found</div>';
+    box.style.display = 'block'; box.style.borderTop = '1px solid var(--border)';
+    return;
+  }
+  box.innerHTML = features.map(f => {
+    const p = f.properties || {};
+    const lat = f.geometry.coordinates[1];
+    const lon = f.geometry.coordinates[0];
+    const place = p.name || p.street || '';
+    const state = p.state || '';
+    const country = (p.countrycode && p.countrycode !== 'US') ? (p.country || '') : '';
+    const sub = [state, country].filter(Boolean).join(', ');
     const label = [place, state].filter(Boolean).join(', ');
-    return `<div class="sr-item" onclick="selectSearchResult(${r.lat},${r.lon},'${label.replace(/'/g,"\\'")}')">
+    if (!place) return '';
+    return `<div class="sr-item" onclick="selectSearchResult(${lat},${lon},'${label.replace(/'/g,"\\'")}')">
       ${label}<small>${sub}</small>
     </div>`;
-  }).join('');
+  }).filter(Boolean).join('');
   box.style.display = 'block'; box.style.borderTop = '1px solid var(--border)';
 }
 
