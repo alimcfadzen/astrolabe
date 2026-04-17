@@ -3067,7 +3067,7 @@ function getRiseSet(lat, lon, date, body) {
   const fn = body==='sun' ? sunAltAz : body==='moon' ? moonAltAz : mwAltAz;
   const base = Date.UTC(date.getUTCFullYear(),date.getUTCMonth(),date.getUTCDate());
   let rise=null,set=null,riseAz=null,setAz=null,prevAlt=null,prevT=null;
-  for (let min=0; min<=24*60; min+=2) {
+  for (let min=0; min<=36*60; min+=2) {
     const t = new Date(base+min*60000);
     const pos = fn(toJD(t),lat,lon);
     if (prevAlt!==null) {
@@ -3154,8 +3154,10 @@ function updateInfoPanel() {
     const events = [];
 
     const toMins = t => t ? t.getUTCHours()*60 + t.getUTCMinutes() : Infinity;
-    const dateUTC = Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
-    const isNextDay = t => t && Date.UTC(t.getUTCFullYear(), t.getUTCMonth(), t.getUTCDate()) > dateUTC;
+    const localOffsetMs = (useLocalTime ? userLocalOffset() : 0) * 60000;
+    const toLocalDay = t => t ? Math.floor((t.getTime() + localOffsetMs) / 86400000) : null;
+    const selectedLocalDay = toLocalDay(date);
+    const isNextDay = t => t && toLocalDay(t) > selectedLocalDay;
 
     if (showSun) {
       const s = getRiseSet(latA, lonA, date, 'sun');
