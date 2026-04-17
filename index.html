@@ -2230,6 +2230,7 @@ function updateTideStrip() {
 function redrawTideHiLoCanvas() {
   const cv = document.getElementById('tide-hilo-canvas');
   const tbEl = document.getElementById('time-bar');
+  const slEl = document.getElementById('time-slider-wrap');
   if (!cv || !tbEl) return;
 
   const barEl_h = document.getElementById("time-bar");
@@ -2744,10 +2745,11 @@ function showSearchResults(results) {
   box.innerHTML = results.map((r, i) => {
     if (!r.lat) return `<div class="sr-item" style="color:var(--muted)">${r.display_name}</div>`;
     const a = r.address || {};
-    const place = a.city || a.town || a.village || a.hamlet || a.county || r.display_name.split(', ')[0];
-    const stateParts = [a.state, a.country !== 'United States' ? a.country : null].filter(Boolean);
-    const sub = stateParts.length ? stateParts.join(', ') : r.display_name.split(', ').slice(-2).join(', ');
-    const label = `${place}, ${stateParts[0] || ''}`.trim().replace(/,$/, '');
+    const place = r.name || r.display_name.split(', ')[0];
+    const state = a.state || '';
+    const country = (a.country && a.country !== 'United States') ? a.country : '';
+    const sub = [state, country].filter(Boolean).join(', ') || r.display_name.split(', ').slice(1, 3).join(', ');
+    const label = [place, state].filter(Boolean).join(', ');
     return `<div class="sr-item" onclick="selectSearchResult(${r.lat},${r.lon},'${label.replace(/'/g,"\\'")}')">
       ${label}<small>${sub}</small>
     </div>`;
