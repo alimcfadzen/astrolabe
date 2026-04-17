@@ -982,8 +982,8 @@ function applyState(s) {
   // Restore hidden events
   if (s.hiddenEvents) Object.assign(hiddenEvents, s.hiddenEvents);
 
-  // Theme
-  if (s.lightMode) {
+  // Theme — default to light for new users (s.lightMode undefined → treat as true)
+  if (s.lightMode !== false) {
     document.documentElement.classList.add('light');
     const btn = document.getElementById('btnTheme');
     if (btn) btn.textContent = '🌙 Dark';
