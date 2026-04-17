@@ -3153,8 +3153,9 @@ function updateInfoPanel() {
     // Collect all events with their UTC minutes for sorting
     const events = [];
 
-    const toMins = t => t ? t.getUTCHours()*60 + t.getUTCMinutes() : Infinity;
-    const localOffsetMs = (useLocalTime ? userLocalOffset() : 0) * 60000;
+    const dayBaseMs = Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+    const toMins = t => t ? (t.getTime() - dayBaseMs) / 60000 : Infinity;
+    const localOffsetMs = (useLocalTime ? userLocalOffset() : 0) * 3600000;
     const toLocalDay = t => t ? Math.floor((t.getTime() + localOffsetMs) / 86400000) : null;
     const selectedLocalDay = toLocalDay(date);
     const isNextDay = t => t && toLocalDay(t) > selectedLocalDay;
