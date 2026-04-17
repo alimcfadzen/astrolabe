@@ -3173,7 +3173,8 @@ function updateInfoPanel() {
     const isLightMode = document.documentElement.classList.contains('light');
     let sm = events.map(ev => {
       const isMoonEv = ev.label === 'Moonrise' || ev.label === 'Moonset';
-      const labelText = (isMoonEv && showMoon) ? `${ph.icon} ${ev.label}` : ev.label;
+      const moonIcon = `<span style="filter:drop-shadow(0 0 4px #c084fc);font-size:13px;line-height:1">${ph.icon}</span>`;
+      const labelText = (isMoonEv && showMoon) ? `${moonIcon} ${ev.label}` : ev.label;
       const active = !hiddenEvents[ev.key];
       const col = ev.lineColor;
       const inactiveBg = isLightMode ? '#eaeef2' : 'rgba(255,255,255,.04)';
@@ -3277,10 +3278,17 @@ function drawLine(ctx,lat,lon,az,color,alpha,width,km,dash) {
 }
 
 function drawLabel(ctx,lat,lon,az,color,text,km) {
+  const origin=map.latLngToContainerPoint([lat,lon]);
   const end=azEndPoint(lat,lon,az,km||520);
   const p=map.latLngToContainerPoint(end);
-  ctx.save(); ctx.fillStyle=color; ctx.font='bold 11px "Inter",sans-serif'; ctx.globalAlpha=.92;
-  ctx.fillText(text,p.x+5,p.y-4); ctx.restore();
+  const dx=p.x-origin.x, dy=p.y-origin.y, len=Math.sqrt(dx*dx+dy*dy)||1;
+  let nx=-dy/len, ny=dx/len;
+  if(ny>0){nx=-nx;ny=-ny;}
+  const tx=p.x+nx*14, ty=p.y+ny*14;
+  ctx.save(); ctx.font='bold 11px "Inter",sans-serif'; ctx.globalAlpha=.92;
+  ctx.strokeStyle='rgba(0,0,0,0.55)'; ctx.lineWidth=3; ctx.lineJoin='round';
+  ctx.strokeText(text,tx,ty);
+  ctx.fillStyle=color; ctx.fillText(text,tx,ty); ctx.restore();
 }
 
 function drawDot(ctx,lat,lon,az,color,km) {
@@ -3618,12 +3626,18 @@ function redraw() {
       // Colored opaque line
       ctx.globalAlpha = 1; ctx.strokeStyle = ln.color; ctx.lineWidth = 3;
       ctx.beginPath(); ctx.moveTo(p0.x, p0.y); ctx.lineTo(p1.x, p1.y); ctx.stroke();
-      // Label at tip
+      // Label offset perpendicular to line
       const frac = Math.min(1, 220 / Math.sqrt((p1.x-p0.x)**2 + (p1.y-p0.y)**2) || 1);
       const lx = p0.x + (p1.x-p0.x)*frac, ly = p0.y + (p1.y-p0.y)*frac;
-      ctx.globalAlpha = 1; ctx.fillStyle = ln.color;
-      ctx.font = 'bold 11px "Inter",sans-serif';
-      ctx.fillText(`${ln.label} ${ln.az.toFixed(1)}°`, lx + 5, ly - 4);
+      const ldx=p1.x-p0.x, ldy=p1.y-p0.y, llen=Math.sqrt(ldx*ldx+ldy*ldy)||1;
+      let lnx=-ldy/llen, lny=ldx/llen;
+      if(lny>0){lnx=-lnx;lny=-lny;}
+      const tx=lx+lnx*14, ty=ly+lny*14;
+      ctx.globalAlpha = 1; ctx.font = 'bold 11px "Inter",sans-serif';
+      ctx.strokeStyle='rgba(0,0,0,0.55)'; ctx.lineWidth=3; ctx.lineJoin='round';
+      ctx.strokeText(`${ln.label} ${ln.az.toFixed(1)}°`, tx, ty);
+      ctx.fillStyle = ln.color;
+      ctx.fillText(`${ln.label} ${ln.az.toFixed(1)}°`, tx, ty);
       ctx.restore();
     }
   }
