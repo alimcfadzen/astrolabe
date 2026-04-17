@@ -1156,11 +1156,11 @@ function initMap() {
         // Fly to user location unless they have a saved map view with pins
         // Always fly to location; only skip if user has saved pins AND saved map view
         const hasSavedView = savedState && savedState.mapCenter && savedState.latA != null && savedState.latA !== "null";
-        if (!hasSavedView) flyToVisible(lat, lng, 14);
+        if (!hasSavedView) flyToVisible(lat, lng, 15);
         // Auto-place Observer pin only if none was restored
         if (latA === null) {
           placeMarker('a', lat, lng);
-          if (!hasSavedView) flyToVisible(lat, lng, 14);
+          if (!hasSavedView) flyToVisible(lat, lng, 15);
           syncPinButtons();
           saveState();
           setTimeout(() => { drawAltGraph(); loadTideForCurrentState(); }, 100);
@@ -1297,7 +1297,7 @@ function goToMyLocation() {
       const { latitude: lat, longitude: lng } = pos.coords;
       cancelPinMode();
       placeMarker('a', lat, lng);
-      flyToVisible(lat, lng, 14);
+      flyToVisible(lat, lng, 15);
       syncPinButtons();
       saveState();
     },
@@ -2768,7 +2768,7 @@ function selectSearchResult(lat, lon, name) {
 function jumpToLocation(lat, lon, label) {
   cancelPinMode();
   placeMarker('a', lat, lon);
-  flyToVisible(lat, lon, 14);
+  flyToVisible(lat, lon, 15);
   saveState();
 }
 
@@ -4491,8 +4491,8 @@ function deleteLocation(id) {
 
 function loadLocationAsPin(loc, which) {
   placeMarker(which, loc.lat, loc.lon);
-  if (which === 'a') flyToVisible(loc.lat, loc.lon, Math.max(map.getZoom(), 14));
-  else map.flyTo([loc.lat, loc.lon], Math.max(map.getZoom(), 14));
+  if (which === 'a') flyToVisible(loc.lat, loc.lon, Math.max(map.getZoom(), 15));
+  else map.flyTo([loc.lat, loc.lon], Math.max(map.getZoom(), 15));
   syncPinButtons();
   updateInfoPanel();
   setTimeout(updatePanelPositions, 60);
