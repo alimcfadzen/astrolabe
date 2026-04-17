@@ -26,6 +26,9 @@ html.light{
 html.light body{background:var(--bg);color:var(--text)}
 html.light #map,html.light .leaflet-container{background:#d8dfe8}
 html.light input[type=date]{background:var(--bg3);border-color:var(--border);color:var(--text)}
+html.light #date-wrap{background:var(--bg3)!important;border-color:var(--border)!important}
+html.light #date-wrap button{border-left-color:var(--border)!important}
+html.light #datePicker{color-scheme:light}
 html.light .tb-row+.tb-row{border-top:1px solid rgba(208,215,222,.8)}
 /* Panel backgrounds */
 html.light #az-panel,
@@ -410,10 +413,10 @@ input[type=date]:focus{outline:none;border-color:rgba(0,0,0,.5)}
 
       <!-- DATE: input + dropdown for month/year/phase -->
       <div class="tb-group" style="gap:4px">
-        <div style="display:flex;align-items:center;background:#21262d;border:1px solid #30363d;border-radius:5px;height:28px">
+        <div id="date-wrap" style="display:flex;align-items:center;background:#21262d;border:1px solid #30363d;border-radius:5px;height:28px">
           <span style="padding:0 4px 0 8px;font-size:14px;line-height:1;pointer-events:none">📅</span>
-          <input type="date" id="datePicker" onclick="this.showPicker&&this.showPicker()" style="background:transparent;border:none;color:#e6edf3;padding:3px 4px 3px 0;font-size:12px;font-family:'Inter',sans-serif;height:28px;outline:none;color-scheme:dark;width:100px;cursor:pointer">
-          <span id="date-mode-label" style="display:none;font-size:12px;font-family:'Inter',sans-serif;color:#e6edf3;padding:3px 4px 3px 0;white-space:nowrap"></span>
+          <input type="date" id="datePicker" onclick="this.showPicker&&this.showPicker()" style="background:transparent;border:none;color:var(--text);padding:3px 4px 3px 0;font-size:12px;font-family:'Inter',sans-serif;height:28px;outline:none;color-scheme:dark;width:100px;cursor:pointer">
+          <span id="date-mode-label" style="display:none;font-size:12px;font-family:'Inter',sans-serif;color:var(--text);padding:3px 4px 3px 0;white-space:nowrap"></span>
           <button id="btnDateMode" onclick="toggleDateDropdown()" title="More date options" style="padding:0 8px;font-size:14px;border:none;border-left:1px solid #30363d;border-radius:0 5px 5px 0;height:100%;background:transparent;color:#58a6ff;cursor:pointer;line-height:1;font-size:18px;font-weight:900;padding:0 10px">▾</button>
         </div>
         <!-- Dropdown panel — positioned absolutely, NOT clipped by overflow:hidden -->
