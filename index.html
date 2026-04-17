@@ -1295,6 +1295,7 @@ function goToMyLocation() {
     pos => {
       hideGeoStatus();
       const { latitude: lat, longitude: lng } = pos.coords;
+      cancelPinMode();
       placeMarker('a', lat, lng);
       flyToVisible(lat, lng, 14);
       syncPinButtons();
@@ -2739,6 +2740,7 @@ function selectSearchResult(lat, lon, name) {
 }
 
 function jumpToLocation(lat, lon, label) {
+  cancelPinMode();
   placeMarker('a', lat, lon);
   flyToVisible(lat, lon, 14);
   saveState();
