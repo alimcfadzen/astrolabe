@@ -1475,12 +1475,6 @@ function onMapClick(e) {
     placeMarker(pinMode, e.latlng.lat, e.latlng.lng);
     cancelPinMode();
     saveState();
-    return;
-  }
-  // No active pin mode — if Observer exists and no POI mode, move Observer
-  if (latA !== null && latB === null) {
-    placeMarker('a', e.latlng.lat, e.latlng.lng);
-    saveState();
   }
 }
 
