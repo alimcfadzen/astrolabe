@@ -53,9 +53,9 @@ html.light #spots-search{background:var(--bg3);color:var(--text)}
 html.light #spots-panel{background:rgba(246,248,250,.99)!important}
 html.light #events-panel{background:rgba(246,248,250,.99)!important}
 #events-panel{
-  position:absolute;top:14px;left:50%;transform:translateX(-30%);
+  position:absolute;top:14px;left:14px;
   background:rgba(13,17,23,.96);border:1px solid var(--border);
-  border-radius:10px;z-index:600;width:480px;
+  border-radius:10px;z-index:600;width:440px;
   max-height:calc(100% - 28px);display:none;flex-direction:column;
   backdrop-filter:blur(12px);overflow:hidden;
 }
@@ -108,6 +108,7 @@ input[type=date]:focus{outline:none;border-color:rgba(0,0,0,.5)}
 .btn{background:#21262d;border:1px solid #30363d;color:#e6edf3;padding:3px 10px;border-radius:5px;font-size:12px;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif;white-space:nowrap;height:28px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
 .btn:hover{border-color:var(--accent);color:var(--text)}
 .btn.on{background:rgba(88,166,255,.15);border-color:var(--accent);color:var(--accent)}
+#btnAzFinder.on,#btnISS.on,#btnSpots.on,#btnEvents.on{background:transparent;border-color:var(--accent);color:var(--text)}
 .btn.sun-on{background:rgba(245,158,11,.15);border-color:var(--sun-rise);color:var(--sun-rise)}
 .btn.moon-on{background:rgba(129,140,248,.15);border-color:var(--moon-rise);color:var(--moon-rise)}
 .btn.mw-on{background:rgba(74,222,128,.15);border-color:var(--mw);color:var(--mw)}
@@ -348,7 +349,7 @@ html.light #risesetstrip span.rs-off{background:transparent!important;border-col
 .panel-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;padding:2px 4px;flex-shrink:0}
 .panel-close:hover{color:var(--text)}
 #spots-panel{
-  position:absolute;top:14px;left:50%;transform:translateX(-50%);
+  position:absolute;top:14px;right:530px;
   background:rgba(13,17,23,.96);border:1px solid var(--border);
   border-radius:10px;z-index:600;width:480px;
   max-height:calc(100% - 28px);display:none;flex-direction:column;
@@ -710,7 +711,10 @@ html.light #ddDatePicker{background:var(--surface);border-color:var(--border);co
     <div id="spots-panel">
       <div id="spots-panel-header">
         <h3>★ Notable Spots</h3>
-        <button class="panel-close" onclick="toggleSpotsPanel()">✕</button>
+        <div style="display:flex;gap:4px;align-items:center">
+          <button class="panel-minimize-btn" id="min-spots" onclick="toggleMinimize('spots')" title="Minimize">−</button>
+          <button class="panel-close" onclick="toggleSpotsPanel()">✕</button>
+        </div>
       </div>
       <div id="spots-panel-body">
         <div id="spots-radius-row">
@@ -731,7 +735,10 @@ html.light #ddDatePicker{background:var(--surface);border-color:var(--border);co
     <div id="events-panel">
       <div id="events-panel-header">
         <h3>🔭 Celestial &amp; Seasonal Events</h3>
-        <button class="panel-close" onclick="toggleEventsPanel()">✕</button>
+        <div style="display:flex;gap:4px;align-items:center">
+          <button class="panel-minimize-btn" id="min-events" onclick="toggleMinimize('events')" title="Minimize">−</button>
+          <button class="panel-close" onclick="toggleEventsPanel()">✕</button>
+        </div>
       </div>
       <div id="events-panel-body">
         <div id="events-upcoming-toggle"></div>
@@ -766,7 +773,7 @@ html.light #ddDatePicker{background:var(--surface);border-color:var(--border);co
           <button class="panel-close" onclick="event.stopPropagation();toggleAzFinder()">✕</button>
         </div>
       </div>
-      <div class="panel-body" id="body-az" style="max-height:600px">
+      <div class="panel-body" id="body-az" style="max-height:calc(100vh - 120px);overflow-y:auto">
       <div class="az-row">
         <label>Azimuth</label>
         <input type="number" id="azDeg" min="0" max="360" step="0.5" placeholder="0–360">
@@ -851,7 +858,6 @@ html.light #ddDatePicker{background:var(--surface);border-color:var(--border);co
         <canvas id="alt-canvas"></canvas>
         <div id="time-info-block">
           <div id="time-display"></div>
-          <div id="time-display-utc" style="display:none;font-size:10px;font-weight:500;color:rgba(255,255,255,0.4);font-family:'Inter',sans-serif;line-height:1.2;white-space:nowrap"></div>
           <div style="display:flex;gap:4px">
             <button id="tz-toggle-btn" onclick="toggleTimezone()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:var(--muted);padding:1px 6px;border-radius:4px;font-size:10px;cursor:pointer;font-family:'Inter',sans-serif;font-weight:600;white-space:nowrap">→ UTC</button>
             <button id="fmt-24h-btn" onclick="toggle24h()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:var(--muted);padding:1px 6px;border-radius:4px;font-size:10px;cursor:pointer;font-family:'Inter',sans-serif;font-weight:600;white-space:nowrap">24H</button>
@@ -1882,17 +1888,6 @@ function toggle24h() {
 function updateTimeDisplay() {
   // Main time display
   document.getElementById('time-display').textContent = fmtSliderTime();
-  // Secondary UTC line so users can cross-reference with the UTC axis
-  const secEl = document.getElementById('time-display-utc');
-  if (secEl) {
-    if (useLocalTime) {
-      const h = Math.floor(sliderMinutes/60), m = String(sliderMinutes%60).padStart(2,'0');
-      secEl.textContent = (use24h ? String(h).padStart(2,'0') : ((h%12)||12)) + ':' + m + ' UTC';
-      secEl.style.display = '';
-    } else {
-      secEl.style.display = 'none';
-    }
-  }
 
   // Sub-label under toggle button — show the local time (as extra context)
   const subLabel = document.getElementById('tz-sub-label');
@@ -4413,6 +4408,8 @@ const PANEL_LABELS = { iss: 'ISS Transits',
   az:      'Azimuth Finder',
   phase:   'Moon Phase',
   library: 'Library',
+  spots:   'Notable Spots',
+  events:  'Events',
 };
 
 function getPanelEl(id) {
@@ -4422,6 +4419,8 @@ function getPanelEl(id) {
   if (id === 'phase')  return document.getElementById('phase-panel');
   if (id === 'iss')    return document.getElementById('iss-panel');
   if (id === 'library')return document.getElementById('library-panel');
+  if (id === 'spots')  return document.getElementById('spots-panel');
+  if (id === 'events') return document.getElementById('events-panel');
   return null;
 }
 
@@ -4439,7 +4438,7 @@ function toggleMinimize(id) {
       // Restore appropriate display type
       if (id === 'legend' || id === 'info') {
         panel.style.display = 'block';
-      } else if (id === 'library') {
+      } else if (id === 'library' || id === 'spots' || id === 'events') {
         panel.style.display = 'flex';
       } else if (id === 'iss') {
         panel.classList.add('open');
@@ -4466,6 +4465,8 @@ const PANEL_CLOSE_FNS = {
   iss:     () => closeISSPanel(),
   library: () => { const p = document.getElementById('library-panel'); if(p) p.style.display='none'; const b = document.getElementById('btnLibrary'); if(b) b.className='btn'; minimizedState['library']=false; },
   az:      () => { minimizedState['az']=false; const pAz=document.getElementById('az-panel'); if(pAz)pAz.style.display='none'; const bAz=document.getElementById('btnAzFinder'); if(bAz)bAz.className='btn'; },
+  spots:   () => { const p=document.getElementById('spots-panel'); if(p) p.style.display='none'; const b=document.getElementById('btnSpots'); if(b) b.className='btn'; minimizedState['spots']=false; },
+  events:  () => { const p=document.getElementById('events-panel'); if(p) p.style.display='none'; const b=document.getElementById('btnEvents'); if(b) b.className='btn'; minimizedState['events']=false; },
 };
 
 function closePanelFromDock(id, e) {
@@ -4500,7 +4501,10 @@ function updatePanelPositions() {
   const lift = tbH + 14; // panels sit 14px above timeline top
   // Lift bottom-anchored panels
   const azPanel = document.getElementById('az-panel');
-  if (azPanel) azPanel.style.bottom = lift + 'px';
+  if (azPanel) {
+    azPanel.style.bottom = lift + 'px';
+    azPanel.style.maxHeight = (window.innerHeight - lift - 14) + 'px';
+  }
   if (dock) dock.style.bottom = (tbH + 8) + 'px';
 }
 
@@ -5318,7 +5322,9 @@ function toggleSpotsPanel() {
   if (visible) {
     panel.style.display = 'none';
     if (btn) btn.className = 'btn';
+    minimizedState['spots'] = false;
   } else {
+    minimizedState['spots'] = false;
     panel.style.display = 'flex';
     if (btn) btn.className = 'btn on';
     buildSpotsCatRow();
@@ -5526,7 +5532,9 @@ function toggleEventsPanel() {
   if (visible) {
     panel.style.display = 'none';
     if (btn) btn.className = 'btn';
+    minimizedState['events'] = false;
   } else {
+    minimizedState['events'] = false;
     panel.style.display = 'flex';
     if (btn) btn.className = 'btn on';
     buildEventsCatRow();
