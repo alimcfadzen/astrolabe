@@ -1134,6 +1134,10 @@ function applyState(s) {
 
   // Restore hidden events
   if (s.hiddenEvents) Object.assign(hiddenEvents, s.hiddenEvents);
+  // Reconcile showX with hiddenEvents (guards against stale localStorage inconsistency)
+  if (!showSun)  { hiddenEvents.sunRise  = hiddenEvents.sunSet  = true; }
+  if (!showMoon) { hiddenEvents.moonRise = hiddenEvents.moonSet = true; }
+  if (!showMW)   { hiddenEvents.mwRise   = hiddenEvents.mwSet   = true; }
 
   // Theme — default to dark for new users (s.lightMode undefined → treat as false)
   if (s.lightMode === true) {
@@ -3922,15 +3926,15 @@ function redraw() {
   if (!yearMode && dateMode === 'day') {
     const jd = toJD(sliderDatetime());
     const sliderBodies = [];
-    if (showSun && (!hiddenEvents.sunRise || !hiddenEvents.sunSet)) {
+    if (showSun) {
       const sp = sunAltAz(jd, latA, lonA);
       if (sp.alt > -0.833) sliderBodies.push({ az: sp.az, color: '#f59e0b', label: '☀' });
     }
-    if (showMoon && (!hiddenEvents.moonRise || !hiddenEvents.moonSet)) {
+    if (showMoon) {
       const mp = moonAltAz(jd, latA, lonA);
       if (mp.alt > 0) sliderBodies.push({ az: mp.az, color: '#a78bfa', label: '☽' });
     }
-    if (showMW && (!hiddenEvents.mwRise || !hiddenEvents.mwSet)) {
+    if (showMW) {
       const mwp = mwAltAz(jd, latA, lonA);
       if (mwp.alt > 0) sliderBodies.push({ az: mwp.az, color: '#4ade80', label: '✦' });
     }
