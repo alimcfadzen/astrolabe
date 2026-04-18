@@ -773,7 +773,10 @@ html.light #ddDatePicker{background:var(--surface);border-color:var(--border);co
         <span style="font-size:10px;color:var(--muted);font-family:'Inter',sans-serif">°</span>
       </div>
       <div id="az-poi-row" style="display:none;padding:3px 0 5px;border-bottom:1px solid var(--border);margin-bottom:5px">
-        <div style="font-size:10px;color:var(--muted);font-family:'Inter',sans-serif;margin-bottom:3px">Observer → POI bearing</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+          <div style="font-size:10px;color:var(--muted);font-family:'Inter',sans-serif">Observer → POI bearing</div>
+          <button onclick="usePoiBearing()" style="background:none;border:1px solid var(--border);color:#22d3ee;border-radius:4px;font-size:10px;cursor:pointer;padding:1px 7px;font-family:'Inter',sans-serif;transition:all .15s" onmouseover="this.style.borderColor='#22d3ee'" onmouseout="this.style.borderColor='var(--border)'">Use</button>
+        </div>
         <div id="az-poi-bearing" style="font-size:12px;font-family:'Inter',sans-serif;color:var(--pin-b)"></div>
       </div>
       <div class="az-row"><label>Body</label>
@@ -798,11 +801,36 @@ html.light #ddDatePicker{background:var(--surface);border-color:var(--border);co
         <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Target Altitude</div>
         <div class="az-row">
           <label>Altitude</label>
-          <input type="number" id="altDeg" min="-2" max="90" step="0.5" value="0" style="width:70px">
+          <input type="number" id="altDeg" min="-90" max="90" step="0.001" value="0" style="width:70px">
           <span style="font-size:10px;color:var(--muted)">° above horizon</span>
         </div>
-        <div style="font-size:10px;color:var(--muted);line-height:1.4;margin-top:3px;margin-bottom:6px">
-          Enter the altitude angle to find when the body reaches that height — e.g. 8° to align with a lighthouse top, 0° for horizon rise/set.
+        <div style="margin-top:5px">
+          <div id="alt-height-toggle" onclick="toggleAltHeightCalc()" style="font-size:10px;color:var(--muted);cursor:pointer;user-select:none;display:flex;align-items:center;gap:4px">
+            <span id="alt-height-arrow">▸</span>
+            <span>Calculate from height &amp; distance</span>
+          </div>
+          <div id="alt-height-calc" style="display:none;margin-top:6px">
+            <div style="display:flex;gap:4px;align-items:center;margin-bottom:4px">
+              <input type="number" id="altHeight" min="0" step="1" placeholder="Height" oninput="calcAltFromHeight()" style="width:58px;font-size:11px">
+              <select id="altHeightUnit" onchange="calcAltFromHeight()" style="font-size:10px;padding:2px 2px;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:4px">
+                <option value="ft">ft</option>
+                <option value="m">m</option>
+              </select>
+              <span style="font-size:10px;color:var(--muted)">at</span>
+              <input type="number" id="altDist" min="0" step="0.1" placeholder="Dist" oninput="calcAltFromHeight()" style="width:52px;font-size:11px">
+              <select id="altDistUnit" onchange="calcAltFromHeight()" style="font-size:10px;padding:2px 2px;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:4px">
+                <option value="mi">mi</option>
+                <option value="km">km</option>
+                <option value="ft">ft</option>
+                <option value="m">m</option>
+              </select>
+            </div>
+            <div id="alt-height-result" style="font-size:10px;color:var(--accent);min-height:13px;margin-bottom:2px"></div>
+            <div style="font-size:9px;color:var(--muted);line-height:1.4">Height of target above your eye level; distance along the ground.</div>
+          </div>
+        </div>
+        <div style="font-size:10px;color:var(--muted);line-height:1.4;margin-top:5px;margin-bottom:6px">
+          Enter an angle, or calculate one from height &amp; distance above. 0° = horizon, e.g. 8° for a lighthouse top.
         </div>
         <div id="alt-result" style="font-size:11px;font-family:'Inter',sans-serif;color:var(--accent);min-height:14px;margin-bottom:6px"></div>
       </div>
@@ -2679,7 +2707,7 @@ function drawAltGraph() {
     const lines = [];
     if (showSun) {
       const sp = sunAltAz(jd, latA, lonA);
-      lines.push({ color: '#f59e0b', text: `🔭  ${sp.az.toFixed(1)}°  ${sp.alt > -0.833 ? '+'+sp.alt.toFixed(1)+'°' : sp.alt.toFixed(1)+'°'}` });
+      lines.push({ color: '#f59e0b', text: `☀️  ${sp.az.toFixed(1)}°  ${sp.alt > -0.833 ? '+'+sp.alt.toFixed(1)+'°' : sp.alt.toFixed(1)+'°'}` });
     }
     if (showMoon) {
       const mp = moonAltAz(jd, latA, lonA);
@@ -3641,7 +3669,7 @@ function renderISSPanel(state) {
 
   // Next upcoming transit (if on a different date)
   if (!nextTransit && todayTransits.length === 0) {
-    html += `<div class="iss-empty" style="margin-top:8px">🔭 No ISS transits found<br>in the next 30 days from this location.<br><span style="font-size:10px;color:var(--muted)">Transits occur in narrow ground corridors —<br>try moving your Observer pin.</span></div>`;
+    html += `<div class="iss-empty" style="margin-top:8px">🛸 No ISS transits found<br>in the next 30 days from this location.<br><span style="font-size:10px;color:var(--muted)">Transits occur in narrow ground corridors —<br>try moving your Observer pin.</span></div>`;
   }
   if (nextTransit && nextTransit.dateStr !== today.toISOString().slice(0,10)) {
     const bodyIcon = nextTransit.body === 'sun' ? '☀' : '☽';
@@ -4126,6 +4154,47 @@ function onAzParamChange() {
   document.getElementById('azDeg').dataset.userEdited = '';
   updateAzPanel();
   updateAltResult();
+  saveState();
+}
+
+function toggleAltHeightCalc() {
+  const calc = document.getElementById('alt-height-calc');
+  const arrow = document.getElementById('alt-height-arrow');
+  const open = calc.style.display === 'none';
+  calc.style.display = open ? 'block' : 'none';
+  arrow.textContent = open ? '▾' : '▸';
+}
+
+function calcAltFromHeight() {
+  const h = parseFloat(document.getElementById('altHeight').value);
+  const d = parseFloat(document.getElementById('altDist').value);
+  const hUnit = document.getElementById('altHeightUnit').value;
+  const dUnit = document.getElementById('altDistUnit').value;
+  const resultEl = document.getElementById('alt-height-result');
+
+  if (isNaN(h) || isNaN(d) || d <= 0) { resultEl.textContent = ''; return; }
+
+  // Convert everything to metres
+  const toM = { ft: 0.3048, m: 1, mi: 1609.344, km: 1000 };
+  const hm = h * toM[hUnit];
+  const dm = d * toM[dUnit];
+
+  const angleDeg = Math.atan2(hm, dm) * 180 / Math.PI;
+  resultEl.textContent = `→ ${angleDeg.toFixed(4)}°`;
+
+  document.getElementById('altDeg').value = angleDeg.toFixed(4);
+  updateAltResult();
+}
+
+function usePoiBearing() {
+  if (latA === null || latB === null) return;
+  const az = bearing(latA, lonA, latB, lonB);
+  const azInput = document.getElementById('azDeg');
+  azInput.value = az.toFixed(1);
+  azInput.dataset.userEdited = '';
+  updateAzPanel();
+  updateAltResult();
+  redraw();
   saveState();
 }
 
