@@ -62,6 +62,8 @@ html.light #events-panel{background:rgba(246,248,250,.99)!important}
 #events-panel-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px 8px;border-bottom:1px solid var(--border);flex-shrink:0}
 #events-panel-header h3{font-size:13px;font-weight:600;color:var(--text);margin:0}
 #events-panel-body{display:flex;flex-direction:column;padding:10px 14px;overflow:hidden;flex:1;min-height:0}
+#events-range-row{display:flex;align-items:center;gap:6px;margin-bottom:8px;font-size:11px;color:var(--muted);font-family:'Inter',sans-serif;flex-shrink:0}
+#events-range{cursor:pointer;height:4px;border:none;background:none}
 #events-list{overflow-y:auto;flex:1;min-height:0}
 .event-item{padding:7px 9px;border-radius:6px;border:1px solid var(--border);margin-bottom:5px;display:flex;gap:8px;align-items:flex-start}
 .event-item.past{opacity:0.45}
@@ -336,10 +338,10 @@ html.light #risesetstrip span.rs-off{background:transparent!important;border-col
 .cat-Wetlands{background:rgba(16,185,129,.15);color:#10b981}
 .cat-Forest{background:rgba(34,197,94,.15);color:#22c55e}
 .cat-Canyon{background:rgba(239,68,68,.15);color:#ef4444}
-.panel-list::-webkit-scrollbar,#spots-list::-webkit-scrollbar{width:6px}
-.panel-list::-webkit-scrollbar-track,#spots-list::-webkit-scrollbar-track{background:var(--bg3);border-radius:3px}
-.panel-list::-webkit-scrollbar-thumb,#spots-list::-webkit-scrollbar-thumb{background:#484f58;border-radius:3px}
-.panel-list::-webkit-scrollbar-thumb:hover,#spots-list::-webkit-scrollbar-thumb:hover{background:#6e7681}
+.panel-list::-webkit-scrollbar,#spots-list::-webkit-scrollbar,#events-list::-webkit-scrollbar{width:6px}
+.panel-list::-webkit-scrollbar-track,#spots-list::-webkit-scrollbar-track,#events-list::-webkit-scrollbar-track{background:var(--bg3);border-radius:3px}
+.panel-list::-webkit-scrollbar-thumb,#spots-list::-webkit-scrollbar-thumb,#events-list::-webkit-scrollbar-thumb{background:#484f58;border-radius:3px}
+.panel-list::-webkit-scrollbar-thumb:hover,#spots-list::-webkit-scrollbar-thumb:hover,#events-list::-webkit-scrollbar-thumb:hover{background:#6e7681}
 .panel-item{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;border:1px solid var(--border);margin-bottom:5px;cursor:pointer;transition:border-color .15s}
 .panel-item:last-child{margin-bottom:0}
 .panel-item:hover{border-color:var(--accent)}
@@ -353,9 +355,9 @@ html.light #risesetstrip span.rs-off{background:transparent!important;border-col
 .panel-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;padding:2px 4px;flex-shrink:0}
 .panel-close:hover{color:var(--text)}
 #spots-panel{
-  position:absolute;top:14px;right:530px;
+  position:absolute;top:14px;left:468px;
   background:rgba(13,17,23,.96);border:1px solid var(--border);
-  border-radius:10px;z-index:600;width:480px;
+  border-radius:10px;z-index:600;width:440px;
   max-height:calc(100% - 28px);display:none;flex-direction:column;
   backdrop-filter:blur(12px);overflow:hidden;
 }
@@ -585,11 +587,10 @@ html.light #ddDatePicker{background:var(--surface);border-color:var(--border);co
       <button style="display:none" id="btnPhase" onclick="setDateMode('phase');toggleDateDropdown()"></button>
 
       <!-- SAVE BUTTONS -->
+      <button class="btn" id="btnLibrary" onclick="toggleLibrary()" title="My Library">📂 My Library</button>
       <div class="tb-group" style="gap:4px">
-        <span class="tb-label" style="color:#58a6ff">Save</span>
-        <button class="btn" onclick="openSavePlan()" title="Save Plan">💾 Plan</button>
+<button class="btn" onclick="openSavePlan()" title="Save Plan">💾 Plan</button>
         <button class="btn" onclick="openSaveLocation()" title="Save Location">💾 Location</button>
-        <button class="btn" id="btnLibrary" onclick="toggleLibrary()" title="My Library">📂 My Library</button>
       </div>
 
       <!-- THEME TOGGLE pushed to far right -->
@@ -669,7 +670,7 @@ html.light #ddDatePicker{background:var(--surface);border-color:var(--border);co
         <h3>🛸 ISS Solar &amp; Lunar Transits</h3>
         <div style="display:flex;gap:4px;align-items:center">
           <button class="panel-minimize-btn" id="min-iss" onclick="toggleMinimize('iss')" style="color:var(--muted);background:none;border:none;cursor:pointer;font-size:14px;padding:0 2px">−</button>
-          <button id="iss-close" onclick="closeISSPanel()">✕</button>
+          <button class="panel-close" id="iss-close" onclick="closeISSPanel()">✕</button>
         </div>
       </div>
       <div id="iss-body">
@@ -745,6 +746,12 @@ html.light #ddDatePicker{background:var(--surface);border-color:var(--border);co
         </div>
       </div>
       <div id="events-panel-body">
+        <div id="events-range-row">
+          <span>Within</span>
+          <input type="range" id="events-range" min="0" max="36" step="3" value="0" oninput="updateEventsRangeLabel();renderEventsPanel()" style="flex:1;min-width:0;accent-color:var(--accent)">
+          <span id="events-range-label" style="min-width:38px;text-align:right;color:var(--text);font-weight:500">All</span>
+          <span>ahead</span>
+        </div>
         <div id="events-upcoming-toggle"></div>
         <div id="events-cat-row"></div>
         <div class="spot-count" id="events-count"></div>
@@ -1396,10 +1403,14 @@ function liftPanelsAboveTimebar() {
   const h = tb.getBoundingClientRect().height;
   if (h < 1) return;
   const bottom = h + 14 + 'px';
-  const az  = document.getElementById('az-panel');
-  const lib = document.getElementById('library-panel');
-  if (az)  az.style.bottom = bottom;
-  if (lib) lib.style.maxHeight = `calc(100% - ${h + 28}px)`;
+  const az     = document.getElementById('az-panel');
+  const lib    = document.getElementById('library-panel');
+  const spots  = document.getElementById('spots-panel');
+  const events = document.getElementById('events-panel');
+  if (az)     az.style.bottom = bottom;
+  if (lib)    lib.style.maxHeight = `calc(100% - ${h + 28}px)`;
+  if (spots)  { spots.style.bottom = bottom;  spots.style.maxHeight  = `calc(100% - ${h + 28}px)`; }
+  if (events) { events.style.bottom = bottom; events.style.maxHeight = `calc(100% - ${h + 28}px)`; }
 }
 
 function showGeoStatus(msg, isError) {
@@ -4491,7 +4502,9 @@ function closePanelFromDock(id, e) {
 function renderMinimizedDock() {
   const dock = document.getElementById('minimized-dock');
   if (!dock) return;
-  const minimized = Object.entries(minimizedState).filter(([,v]) => v);
+  const DOCK_ORDER = ['az','iss','spots','events','library'];
+  const minimized = Object.entries(minimizedState).filter(([,v]) => v)
+    .sort(([a],[b]) => DOCK_ORDER.indexOf(a) - DOCK_ORDER.indexOf(b));
   if (!minimized.length) { dock.innerHTML = ''; return; }
   dock.innerHTML = minimized.map(([id]) =>
     `<div class="minimized-chip" onclick="toggleMinimize('${id}')">
@@ -4514,6 +4527,10 @@ function updatePanelPositions() {
     azPanel.style.bottom = lift + 'px';
     azPanel.style.maxHeight = (window.innerHeight - lift - 14) + 'px';
   }
+  const spotsPanel  = document.getElementById('spots-panel');
+  const eventsPanel = document.getElementById('events-panel');
+  if (spotsPanel)  { spotsPanel.style.bottom  = lift + 'px'; spotsPanel.style.maxHeight  = (window.innerHeight - lift - 14) + 'px'; }
+  if (eventsPanel) { eventsPanel.style.bottom = lift + 'px'; eventsPanel.style.maxHeight = (window.innerHeight - lift - 14) + 'px'; }
   if (dock) dock.style.bottom = (tbH + 8) + 'px';
 }
 
@@ -4860,6 +4877,10 @@ function toggleLibrary(openTab) {
     panel.style.display = 'none';
     btn.className = 'btn';
   } else {
+    const spotsP = document.getElementById('spots-panel');
+    if (spotsP && spotsP.style.display === 'flex') toggleSpotsPanel();
+    const eventsP = document.getElementById('events-panel');
+    if (eventsP && eventsP.style.display === 'flex') toggleEventsPanel();
     panel.style.display = 'flex';
     btn.className = 'btn on';
     switchLibTab(openTab || activeLibTab);
@@ -5335,6 +5356,8 @@ function toggleSpotsPanel() {
     minimizedState['spots'] = false;
   } else {
     minimizedState['spots'] = false;
+    const lib = document.getElementById('library-panel');
+    if (lib && lib.style.display === 'flex') toggleLibrary();
     panel.style.display = 'flex';
     if (btn) btn.className = 'btn on';
     buildSpotsCatRow();
@@ -5545,6 +5568,8 @@ function toggleEventsPanel() {
     minimizedState['events'] = false;
   } else {
     minimizedState['events'] = false;
+    const lib = document.getElementById('library-panel');
+    if (lib && lib.style.display === 'flex') toggleLibrary();
     panel.style.display = 'flex';
     if (btn) btn.className = 'btn on';
     buildEventsCatRow();
@@ -5583,11 +5608,31 @@ function setEventCat(cat) {
   renderEventsPanel();
 }
 
+function updateEventsRangeLabel() {
+  const el = document.getElementById('events-range');
+  const label = document.getElementById('events-range-label');
+  if (!el || !label) return;
+  const v = parseInt(el.value);
+  if (v === 0) { label.textContent = 'All'; return; }
+  if (v < 12)  { label.textContent = v + ' mo'; return; }
+  if (v === 12) { label.textContent = '1 yr'; return; }
+  label.textContent = (v % 12 === 0 ? (v/12) : (v/12).toFixed(1)) + ' yr';
+}
+
 function renderEventsPanel() {
   const today = new Date().toISOString().slice(0, 10);
+  const rangeEl = document.getElementById('events-range');
+  const monthsAhead = rangeEl ? parseInt(rangeEl.value) : 0;
+  let cutoffStr = null;
+  if (monthsAhead > 0) {
+    const cutoff = new Date();
+    cutoff.setMonth(cutoff.getMonth() + monthsAhead);
+    cutoffStr = cutoff.toISOString().slice(0, 10);
+  }
   let events = CELESTIAL_EVENTS.filter(e => {
     if (activeEventCat && e.cat !== activeEventCat) return false;
     if (eventsUpcomingOnly && e.date < today) return false;
+    if (cutoffStr && e.date > cutoffStr) return false;
     return true;
   });
   // Sort chronologically
