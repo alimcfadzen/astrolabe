@@ -3438,46 +3438,50 @@ function toDMS(deg, posLabel, negLabel) {
 async function updateObserverInfoPanel() {
   const panel = document.getElementById('observer-info-panel');
   if (!panel) return;
-  if (!latA) { panel.style.display = 'none'; return; }
-
-  const lat = latA, lon = lonA;
 
   function render() {
-    const rows = [
-      ['Lat', lat.toFixed(6) + '°'],
-      ['Lon', lon.toFixed(6) + '°'],
-      ['', toDMS(lat, 'N', 'S')],
-      ['', toDMS(lon, 'E', 'W')],
-    ];
-    if (_oipElev !== null) rows.push(['Elev', _oipElev >= 0 ? `${_oipElev} m` : `${_oipElev} m`]);
-    else rows.push(['Elev', '…']);
-    if (_oipDecl !== null) {
-      const sign = _oipDecl >= 0 ? '+' : '';
-      rows.push(['Mag decl', `${sign}${_oipDecl.toFixed(1)}°`]);
-    } else {
-      rows.push(['Mag decl', '…']);
-    }
     let html = `<div style="color:var(--pin-a);font-size:10px;font-weight:600;letter-spacing:.04em;margin-bottom:4px">● OBSERVER</div>`;
-    html += rows.map(([lbl, val]) =>
-      `<div class="oi-row"><span class="oi-label">${lbl}</span><span class="oi-val">${val}</span></div>`
-    ).join('');
+    if (latA !== null) {
+      const rows = [
+        ['Lat', latA.toFixed(6) + '°'],
+        ['Lon', lonA.toFixed(6) + '°'],
+        ['', toDMS(latA, 'N', 'S')],
+        ['', toDMS(lonA, 'E', 'W')],
+        ['Elev', _oipElev !== null ? `${_oipElev} m` : '…'],
+        ['Mag decl', _oipDecl !== null ? `${_oipDecl >= 0 ? '+' : ''}${_oipDecl.toFixed(1)}°` : '…'],
+      ];
+      html += rows.map(([lbl, val]) =>
+        `<div class="oi-row"><span class="oi-label">${lbl}</span><span class="oi-val">${val}</span></div>`
+      ).join('');
+    } else {
+      [['Lat','--'],['Lon','--'],['Elev','--'],['Mag decl','--']].forEach(([lbl,val]) => {
+        html += `<div class="oi-row"><span class="oi-label">${lbl}</span><span class="oi-val">${val}</span></div>`;
+      });
+    }
+
+    html += `<div style="border-top:1px solid var(--border);margin:5px 0 4px;padding-top:4px;color:var(--pin-b);font-size:10px;font-weight:600;letter-spacing:.04em">● POI</div>`;
     if (latB !== null) {
-      const bng = bearing(lat, lon, latB, lonB);
-      const dist = distKm(lat, lon, latB, lonB);
+      const hasBoth = latA !== null;
+      const bng = hasBoth ? bearing(latA, lonA, latB, lonB) : null;
+      const dist = hasBoth ? distKm(latA, lonA, latB, lonB) : null;
       const poiRows = [
         ['Lat', latB.toFixed(6) + '°'],
         ['Lon', lonB.toFixed(6) + '°'],
         ['', toDMS(latB, 'N', 'S')],
         ['', toDMS(lonB, 'E', 'W')],
         ['Elev', _oipElevB !== null ? `${_oipElevB} m` : '…'],
-        ['Bearing', bng.toFixed(1) + '° ' + cardinal(bng)],
-        ['Distance', dist >= 1 ? dist.toFixed(2) + ' km' : (dist * 1000).toFixed(0) + ' m'],
+        ['Bearing', bng !== null ? bng.toFixed(1) + '° ' + cardinal(bng) : '--'],
+        ['Distance', dist !== null ? (dist >= 1 ? dist.toFixed(2) + ' km' : (dist * 1000).toFixed(0) + ' m') : '--'],
       ];
-      html += `<div style="border-top:1px solid var(--border);margin:5px 0 4px;padding-top:4px;color:var(--pin-b);font-size:10px;font-weight:600;letter-spacing:.04em">● POI</div>`;
       html += poiRows.map(([lbl, val]) =>
         `<div class="oi-row"><span class="oi-label">${lbl}</span><span class="oi-val">${val}</span></div>`
       ).join('');
+    } else {
+      [['Lat','--'],['Lon','--'],['Elev','--'],['Bearing','--'],['Distance','--']].forEach(([lbl,val]) => {
+        html += `<div class="oi-row"><span class="oi-label">${lbl}</span><span class="oi-val">${val}</span></div>`;
+      });
     }
+
     panel.innerHTML = html;
     panel.style.display = 'block';
     setTimeout(updatePanelPositions, 0);
@@ -3485,38 +3489,37 @@ async function updateObserverInfoPanel() {
 
   render();
 
-  // Fetch elevation + declination only when location changes
-  if (_oipLat !== lat || _oipLon !== lon) {
-    _oipLat = lat; _oipLon = lon;
-    _oipElev = null; _oipDecl = null;
-    render();
-
-    try {
-      const elevRes = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lat.toFixed(6)}&longitude=${lon.toFixed(6)}`);
-      const elevData = await elevRes.json();
-      if (elevData.elevation != null) {
-        _oipElev = Math.round(Array.isArray(elevData.elevation) ? elevData.elevation[0] : elevData.elevation);
-        if (_oipLat === lat && _oipLon === lon) render();
-      }
-    } catch(e) { _oipElev = null; }
-
-    _oipDecl = computeMagDeclination(lat, lon);
-    if (_oipLat === lat && _oipLon === lon) render();
-  }
-
-  // Fetch POI elevation when POI location changes
-  if (latB !== null && (_oipLatB !== latB || _oipLonB !== lonB)) {
-    _oipLatB = latB; _oipLonB = lonB;
-    _oipElevB = null;
-    render();
-    try {
-      const elevRes = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${latB.toFixed(6)}&longitude=${lonB.toFixed(6)}`);
-      const elevData = await elevRes.json();
-      if (elevData.elevation != null) {
-        _oipElevB = Math.round(Array.isArray(elevData.elevation) ? elevData.elevation[0] : elevData.elevation);
-        if (_oipLatB === latB && _oipLonB === lonB) render();
-      }
-    } catch(e) { _oipElevB = null; }
+  if (latA !== null) {
+    if (_oipLat !== latA || _oipLon !== lonA) {
+      _oipLat = latA; _oipLon = lonA;
+      _oipElev = null; _oipDecl = null;
+      render();
+      try {
+        const elevRes = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${latA.toFixed(6)}&longitude=${lonA.toFixed(6)}`);
+        const elevData = await elevRes.json();
+        if (elevData.elevation != null) {
+          _oipElev = Math.round(Array.isArray(elevData.elevation) ? elevData.elevation[0] : elevData.elevation);
+          if (_oipLat === latA && _oipLon === lonA) render();
+        }
+      } catch(e) { _oipElev = null; }
+      _oipDecl = computeMagDeclination(latA, lonA);
+      if (_oipLat === latA && _oipLon === lonA) render();
+    }
+    if (latB !== null && (_oipLatB !== latB || _oipLonB !== lonB)) {
+      _oipLatB = latB; _oipLonB = lonB;
+      _oipElevB = null;
+      render();
+      try {
+        const elevRes = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${latB.toFixed(6)}&longitude=${lonB.toFixed(6)}`);
+        const elevData = await elevRes.json();
+        if (elevData.elevation != null) {
+          _oipElevB = Math.round(Array.isArray(elevData.elevation) ? elevData.elevation[0] : elevData.elevation);
+          if (_oipLatB === latB && _oipLonB === lonB) render();
+        }
+      } catch(e) { _oipElevB = null; }
+    }
+  } else {
+    _oipLat = null; _oipLon = null; _oipElev = null; _oipDecl = null;
   }
   if (latB === null) { _oipLatB = null; _oipLonB = null; _oipElevB = null; }
 }
