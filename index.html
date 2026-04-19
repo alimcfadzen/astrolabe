@@ -277,9 +277,9 @@ html.light #risesetstrip span.rs-off{background:transparent!important;border-col
 
 /* UNIFIED LIBRARY PANEL */
 #library-panel{
-  position:absolute;top:14px;left:50%;transform:translateX(-70%);
+  position:absolute;top:0;left:14px;
   background:rgba(13,17,23,.96);border:1px solid var(--border);
-  border-radius:10px;z-index:600;width:480px;
+  border-radius:10px;z-index:600;width:496px;
   max-height:calc(100% - 28px);display:none;flex-direction:column;
   backdrop-filter:blur(12px);overflow:hidden;
 }
@@ -3723,6 +3723,8 @@ function toggleISS() {
   showISS = true;
   document.getElementById('btnISS').className = 'btn on';
   panel.classList.add('open');
+  const libP = document.getElementById('library-panel');
+  if (libP && libP.style.display === 'flex') toggleLibrary();
   saveState();
   renderISSPanel('loading');
   if (latA) loadISSTransits();
@@ -4638,10 +4640,12 @@ function updatePanelPositions() {
     const mcBR  = mapC.getBoundingClientRect();
     startLeft = Math.max(14, Math.round(obsBR.right - mcBR.left) + 10);
   }
+  const libPanel = document.getElementById('library-panel');
   if (azPanel)    azPanel.style.left    = startLeft + 'px';
   if (issPanel)   issPanel.style.left   = (startLeft + 218 + 18) + 'px';
   if (spotsPanel) spotsPanel.style.left = (startLeft + 218 + 18 + 260 + 18) + 'px';
   if (eventsPanel) eventsPanel.style.left = (startLeft + 218 + 18 + 260 + 18 + 280 + 18) + 'px';
+  if (libPanel)  { libPanel.style.left = startLeft + 'px'; libPanel.style.bottom = lift + 'px'; libPanel.style.maxHeight = panelH; }
   if (dock) dock.style.bottom = (tbH + 8) + 'px';
 }
 
@@ -4661,6 +4665,8 @@ function toggleAzFinder() {
   panel.style.display = vis ? 'none' : 'block';
   if (btn) btn.className = 'btn' + (vis ? '' : ' on');
   if (!vis) {
+    const lib = document.getElementById('library-panel');
+    if (lib && lib.style.display === 'flex') toggleLibrary();
     const azIn = document.getElementById('azDeg');
     if (azIn && !azIn.dataset.userEdited) {
       if (latA !== null && latB !== null) {
@@ -4990,13 +4996,14 @@ function toggleLibrary(openTab) {
     minimizedState['library'] = false;
     renderMinimizedDock();
   } else {
-    const spotsP = document.getElementById('spots-panel');
-    if (spotsP && spotsP.style.display === 'flex') toggleSpotsPanel();
-    const eventsP = document.getElementById('events-panel');
-    if (eventsP && eventsP.style.display === 'flex') toggleEventsPanel();
+    // Close AZ and ISS when library opens
+    const azP = document.getElementById('az-panel');
+    if (azP && azP.style.display === 'block') toggleAzFinder();
+    if (document.getElementById('iss-panel')?.classList.contains('open')) closeISSPanel();
     panel.style.display = 'flex';
     btn.className = 'btn on';
     switchLibTab(openTab || activeLibTab);
+    setTimeout(updatePanelPositions, 0);
   }
 }
 
@@ -5485,8 +5492,6 @@ function toggleSpotsPanel() {
   } else {
     minimizedState['spots'] = false;
     renderMinimizedDock();
-    const lib = document.getElementById('library-panel');
-    if (lib && lib.style.display === 'flex') toggleLibrary();
     panel.style.display = 'flex';
     if (btn) btn.className = 'btn on';
     buildSpotsCatRow();
@@ -6144,8 +6149,6 @@ function toggleEventsPanel() {
   } else {
     minimizedState['events'] = false;
     renderMinimizedDock();
-    const lib = document.getElementById('library-panel');
-    if (lib && lib.style.display === 'flex') toggleLibrary();
     panel.style.display = 'flex';
     if (btn) btn.className = 'btn on';
     buildEventsCatRow();
