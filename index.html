@@ -5792,6 +5792,155 @@ function buildPlanetEventNote(ev) {
   return parts.map(p=>escHtml(p)).join('<br>');
 }
 
+// ── MOON PHASE EVENTS ────────────────────────────────────────────────────
+
+function _moonEclipLon(jd) {
+  const T=(jd-2451545)/36525, p=Math.PI/180;
+  const Lm=((218.3164477+481267.88123421*T)%360+360)%360;
+  const D= ((297.8501921+445267.1114034*T) %360+360)%360;
+  const M= ((357.5291092+35999.0502909*T)  %360+360)%360;
+  const Mp=((134.9633964+477198.8675055*T) %360+360)%360;
+  const F= ((93.2720950 +483202.0175233*T) %360+360)%360;
+  return ((Lm
+    +6.289*Math.sin(Mp*p)   -1.274*Math.sin((2*D-Mp)*p) +0.658*Math.sin(2*D*p)
+    -0.214*Math.sin(2*Mp*p) -0.186*Math.sin(M*p)        -0.114*Math.sin(2*F*p)
+    +0.059*Math.sin((2*D-2*Mp)*p) +0.057*Math.sin((2*D-M-Mp)*p)
+    +0.053*Math.sin((2*D+Mp)*p)   +0.046*Math.sin((2*D-M)*p)
+    -0.041*Math.sin((Mp-M)*p)     +0.035*Math.sin(D*p)
+    -0.031*Math.sin((Mp+M)*p))%360+360)%360;
+}
+
+function _sunEclipLon(jd) {
+  const n=jd-2451545;
+  const L=(280.460+0.9856474*n)%360;
+  const g=((357.528+0.9856003*n)%360)*Math.PI/180;
+  return ((L+1.915*Math.sin(g)+0.02*Math.sin(2*g))%360+360)%360;
+}
+
+function _moonPhaseAngle(jd) {
+  return ((_moonEclipLon(jd)-_sunEclipLon(jd))%360+360)%360;
+}
+
+function _moonDistKm(jd) {
+  const T=(jd-2451545)/36525, p=Math.PI/180;
+  const D= ((297.8501921+445267.1114034*T)%360+360)%360;
+  const Mp=((134.9633964+477198.8675055*T)%360+360)%360;
+  const M= ((357.5291092+35999.0502909*T) %360+360)%360;
+  return 385001
+    -20905*Math.cos(Mp*p) -3699*Math.cos((2*D-Mp)*p)
+    -2956*Math.cos(2*D*p) -570*Math.cos(2*Mp*p)
+    +246*Math.cos((2*Mp-2*D)*p) -205*Math.cos(M*p);
+}
+
+const FULL_MOON_NAMES = [
+  null,
+  ['Wolf Moon',      'Wolves howled outside winter camps in the cold and dark.'],
+  ['Snow Moon',      'Named for the heavy snowfalls typical in February.'],
+  ['Worm Moon',      'Earthworms appear as the frozen ground begins to thaw.'],
+  ['Pink Moon',      'Named for the pink phlox wildflowers of early spring.'],
+  ['Flower Moon',    'Flowers bloom abundantly throughout May.'],
+  ['Strawberry Moon','Named for the time to gather the season\'s first strawberries.'],
+  ['Buck Moon',      'Male deer begin growing new antlers in July.'],
+  ['Sturgeon Moon',  'Named for the sturgeon caught in abundance in late summer.'],
+  ['Harvest Moon',   'Farmers worked late by moonlight to bring in the harvest.'],
+  ['Hunter\'s Moon', 'Hunting season by moonlight; prey fattened for winter.'],
+  ['Beaver Moon',    'Time to set beaver traps before rivers froze.'],
+  ['Cold Moon',      'Nights are long and cold; winter has firmly arrived.'],
+];
+
+let _moonPhaseCache=null, _moonPhaseCacheYear=null;
+
+function getMoonPhaseEvents() {
+  const yr=new Date().getFullYear();
+  if(_moonPhaseCache&&_moonPhaseCacheYear===yr) return _moonPhaseCache;
+  _moonPhaseCacheYear=yr;
+  _moonPhaseCache=_computeMoonPhaseEvents();
+  return _moonPhaseCache;
+}
+
+function _computeMoonPhaseEvents() {
+  const evts=[];
+  const today=new Date();
+  const startJD=toJD(new Date(Date.UTC(today.getUTCFullYear()-1,0,1)));
+  const endJD  =toJD(new Date(Date.UTC(today.getUTCFullYear()+2,0,1)));
+  const nDays  =Math.floor(endJD-startJD);
+
+  let prev=_moonPhaseAngle(startJD);
+
+  for(let i=1;i<=nDays;i++){
+    const jd=startJD+i;
+    const curr=_moonPhaseAngle(jd);
+
+    for(const target of [0,90,180,270]){
+      let hit=false, approxJD=jd;
+      if(target===0){
+        if(prev>340&&curr<20){
+          const span=(360-prev)+curr;
+          approxJD=jd-1+(360-prev)/span;
+          hit=true;
+        }
+      } else if(prev<target&&curr>=target&&(curr-prev)<60){
+        approxJD=jd-1+(target-prev)/(curr-prev);
+        hit=true;
+      }
+
+      if(hit){
+        const d=new Date((approxJD-2440587.5)*86400000);
+        const dateStr=d.toISOString().slice(0,10);
+        const mo=parseInt(dateStr.slice(5,7),10);
+
+        if(target===0){
+          evts.push({cat:'Moon',subtype:'new',date:dateStr,jd:approxJD,
+            name:'🌑 New Moon',
+            note:'Lunar disk invisible — ideal for deep sky and Milky Way photography with no moonlight interference.'});
+        } else if(target===90){
+          evts.push({cat:'Moon',subtype:'first_quarter',date:dateStr,jd:approxJD,
+            name:'🌓 First Quarter Moon',
+            note:'Half-illuminated, waxing toward full. Sets around midnight.'});
+        } else if(target===180){
+          const dist=_moonDistKm(approxJD);
+          const isSuper=dist<362000;
+          const isMicro=dist>405000;
+          const [mname,mnote]=FULL_MOON_NAMES[mo]||['Full Moon',''];
+          const prefix=isSuper?'🌕 Supermoon':'🌕 Full Moon';
+          const distNote=isSuper
+            ?` Near perigee at ${Math.round(dist).toLocaleString()} km — appears larger and brighter than average.`
+            :isMicro
+            ?` Near apogee at ${Math.round(dist).toLocaleString()} km — appears slightly smaller than average.`
+            :` Distance: ${Math.round(dist).toLocaleString()} km.`;
+          evts.push({cat:'Moon',subtype:isSuper?'supermoon':'full',date:dateStr,jd:approxJD,
+            name:`${prefix} — ${mname}`,
+            note:`${mnote}${distNote}`});
+        } else if(target===270){
+          evts.push({cat:'Moon',subtype:'last_quarter',date:dateStr,jd:approxJD,
+            name:'🌗 Last Quarter Moon',
+            note:'Half-illuminated, waning toward new. Rises around midnight.'});
+        }
+      }
+    }
+    prev=curr;
+  }
+
+  // Post-process: mark second full moon in any calendar month as Blue Moon
+  const fullByMonth={};
+  for(const ev of evts){
+    if(ev.subtype==='full'||ev.subtype==='supermoon'){
+      const key=ev.date.slice(0,7);
+      (fullByMonth[key]||(fullByMonth[key]=[])).push(ev);
+    }
+  }
+  for(const moons of Object.values(fullByMonth)){
+    if(moons.length>=2){
+      const bm=moons[1];
+      bm.name=bm.name.replace(/🌕 (?:Supermoon|Full Moon)/,'🌕 Blue Moon');
+      bm.subtype='blue_moon';
+      bm.note+=' Second full moon in this calendar month.';
+    }
+  }
+
+  return evts;
+}
+
 // ── CELESTIAL & SEASONAL EVENTS ───────────────────────────────────────────
 const CELESTIAL_EVENTS = [
   // ── 2025 ──
@@ -5811,9 +5960,7 @@ const CELESTIAL_EVENTS = [
   { date:'2025-09-07', name:'Total Lunar Eclipse',       cat:'Eclipse',     note:'Visible from Europe, Africa, Asia, Australia.' },
   { date:'2025-09-21', name:'Partial Solar Eclipse',     cat:'Eclipse',     note:'Visible from S Pacific, New Zealand, Antarctica.' },
   { date:'2025-09-22', name:'Fall Equinox',              cat:'Solstice',    note:'Sun rises/sets due East/West. Peak fall foliage season begins.' },
-  { date:'2025-10-07', name:'Supermoon \u2014 Hunter\'s Moon', cat:'Moon',        note:'Moon near perigee. Largest and brightest full moon of 2025.' },
   { date:'2025-10-22', name:'Orionids Peak',             cat:'Meteor',      note:'~20 meteors/hr. Halley\'s Comet debris. Best after midnight.' },
-  { date:'2025-11-05', name:'Supermoon — Beaver Moon',   cat:'Moon',        note:'Second supermoon of autumn; ideal for moonlit landscape photography.' },
   { date:'2025-11-17', name:'Leonids Peak',              cat:'Meteor',      note:'~15 meteors/hr. Fast, bright meteors. Best after midnight.' },
   { date:'2025-12-14', name:'Geminids Peak',             cat:'Meteor',      note:'Up to 120 meteors/hr. Best annual shower. Active all night.' },
   { date:'2025-12-21', name:'Winter Solstice',           cat:'Solstice',    note:'Shortest day of the year. Sun at its southernmost rise/set points.' },
@@ -5919,7 +6066,7 @@ function renderEventsPanel() {
     cutoff.setMonth(cutoff.getMonth() + monthsAhead);
     cutoffStr = cutoff.toISOString().slice(0, 10);
   }
-  let events = [...CELESTIAL_EVENTS, ...getPlanetEvents()].filter(e => {
+  let events = [...CELESTIAL_EVENTS, ...getPlanetEvents(), ...getMoonPhaseEvents()].filter(e => {
     if (activeEventCat && e.cat !== activeEventCat) return false;
     if (eventsUpcomingOnly && e.date < today) return false;
     if (cutoffStr && e.date > cutoffStr) return false;
