@@ -5477,7 +5477,7 @@ let _drivingFetchKey = '';  // "lat,lon" — prevents duplicate fetches
 
 function updateSpotsRadiusLabel() {
   const val = parseInt(document.getElementById('spots-radius')?.value || '0');
-  document.getElementById('spots-radius-label').textContent = val === 0 ? 'All mi' : `${val} mi`;
+  document.getElementById('spots-radius-label').textContent = val === 0 ? 'All miles' : `${val} miles`;
 }
 
 function toggleSpotsPanel() {
