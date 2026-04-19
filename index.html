@@ -5873,7 +5873,7 @@ function _computeMoonPhaseEvents() {
     const jd=startJD+i;
     const curr=_moonPhaseAngle(jd);
 
-    for(const target of [0,90,180,270]){
+    for(const target of [0,45,90,135,180,225,270,315]){
       let hit=false, approxJD=jd;
       if(target===0){
         if(prev>340&&curr<20){
@@ -5895,10 +5895,18 @@ function _computeMoonPhaseEvents() {
           evts.push({cat:'Moon',subtype:'new',date:dateStr,jd:approxJD,
             name:'🌑 New Moon',
             note:'Lunar disk invisible — ideal for deep sky and Milky Way photography with no moonlight interference.'});
+        } else if(target===45){
+          evts.push({cat:'Moon',subtype:'waxing_crescent',date:dateStr,jd:approxJD,
+            name:'🌒 Waxing Crescent',
+            note:'Thin crescent visible in the western sky after sunset. Good for crescent photography.'});
         } else if(target===90){
           evts.push({cat:'Moon',subtype:'first_quarter',date:dateStr,jd:approxJD,
             name:'🌓 First Quarter Moon',
             note:'Half-illuminated, waxing toward full. Sets around midnight.'});
+        } else if(target===135){
+          evts.push({cat:'Moon',subtype:'waxing_gibbous',date:dateStr,jd:approxJD,
+            name:'🌔 Waxing Gibbous',
+            note:'More than half illuminated and brightening. Rises in the afternoon, sets after midnight.'});
         } else if(target===180){
           const dist=_moonDistKm(approxJD);
           const isSuper=dist<362000;
@@ -5913,10 +5921,18 @@ function _computeMoonPhaseEvents() {
           evts.push({cat:'Moon',subtype:isSuper?'supermoon':'full',date:dateStr,jd:approxJD,
             name:`${prefix} — ${mname}`,
             note:`${mnote}${distNote}`});
+        } else if(target===225){
+          evts.push({cat:'Moon',subtype:'waning_gibbous',date:dateStr,jd:approxJD,
+            name:'🌖 Waning Gibbous',
+            note:'More than half illuminated and fading. Rises after sunset, sets in the morning.'});
         } else if(target===270){
           evts.push({cat:'Moon',subtype:'last_quarter',date:dateStr,jd:approxJD,
             name:'🌗 Last Quarter Moon',
             note:'Half-illuminated, waning toward new. Rises around midnight.'});
+        } else if(target===315){
+          evts.push({cat:'Moon',subtype:'waning_crescent',date:dateStr,jd:approxJD,
+            name:'🌘 Waning Crescent',
+            note:'Thin crescent visible in the eastern sky before sunrise. Good for crescent photography.'});
         }
       }
     }
