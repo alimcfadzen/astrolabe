@@ -213,7 +213,7 @@ input[type=date]:focus{outline:none;border-color:rgba(0,0,0,.5)}
 #tooltip .tt-mw-extra{color:var(--muted);font-size:10px;margin-top:3px;opacity:.85}
 
 /* AZ FINDER */
-#az-panel{position:absolute;left:14px;background:rgba(13,17,23,.93);border:1px solid var(--border);border-radius:10px;padding:12px 14px;z-index:500;width:218px;backdrop-filter:blur(10px);display:none}
+#az-panel{position:absolute;top:0;left:14px;background:rgba(13,17,23,.93);border:1px solid var(--border);border-radius:10px;padding:12px 14px;z-index:500;width:218px;backdrop-filter:blur(10px);display:none;overflow-y:auto}
 #az-panel h3{font-size:10px;font-family:'Inter',sans-serif;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
 #body-az{overflow-y:auto!important}
 #altHeight,#altDist,#altHeightUnit,#altDistUnit{font-size:10px!important}
@@ -4617,7 +4617,7 @@ function updatePanelPositions() {
   const azPanel = document.getElementById('az-panel');
   if (azPanel) {
     azPanel.style.bottom = lift + 'px';
-    azPanel.style.maxHeight = (window.innerHeight - lift - 14) + 'px';
+    azPanel.style.maxHeight = panelH;
   }
   const issPanel    = document.getElementById('iss-panel');
   const spotsPanel  = document.getElementById('spots-panel');
@@ -4625,12 +4625,7 @@ function updatePanelPositions() {
   const panelH = (window.innerHeight - lift - 14) + 'px';
   // ISS sizes to content — no bottom stretch
   if (eventsPanel) { eventsPanel.style.bottom = lift + 'px'; eventsPanel.style.maxHeight = panelH; }
-  // Spots matches ISS height
-  if (spotsPanel && issPanel) {
-    const issH = issPanel.offsetHeight || 398;
-    spotsPanel.style.maxHeight = issH + 'px';
-    spotsPanel.style.bottom = '';
-  }
+  if (spotsPanel) { spotsPanel.style.bottom = lift + 'px'; spotsPanel.style.maxHeight = panelH; }
   // Shift AZ/ISS/Spots right of the observer-info panel when it is visible
   const obsPanel = document.getElementById('observer-info-panel');
   const mapC = document.getElementById('map-container');
@@ -5061,6 +5056,8 @@ function loadLocationAsPin(loc, which) {
   setTimeout(updatePanelPositions, 60);
   if (which === 'a') { tideFetchKey=''; redrawTideCanvas(); if(timelineActive) loadTideForCurrentState(); }
   saveState(); redraw();
+  const lp = document.getElementById('library-panel');
+  if (lp && lp.style.display === 'flex') toggleLibrary();
 }
 
 function loadLocation(loc) {
@@ -5071,6 +5068,8 @@ function loadLocation(loc) {
   updateInfoPanel();
   setTimeout(updatePanelPositions, 60);
   if (loc.lat != null) { tideFetchKey=''; redrawTideCanvas(); if(timelineActive) loadTideForCurrentState(); }
+  const lp = document.getElementById('library-panel');
+  if (lp && lp.style.display === 'flex') toggleLibrary();
   saveState(); redraw();
 }
 
@@ -5635,6 +5634,8 @@ function loadSpot(s, which) {
   setTimeout(updatePanelPositions, 60);
   if (which === 'a') { tideFetchKey=''; redrawTideCanvas(); if(timelineActive) loadTideForCurrentState(); }
   saveState(); redraw();
+  const sp = document.getElementById('spots-panel');
+  if (sp && sp.style.display === 'flex') toggleSpotsPanel();
 }
 
 
