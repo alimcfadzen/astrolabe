@@ -499,6 +499,7 @@ html.light #ddDatePicker{background:var(--surface);border-color:var(--border);co
         <button class="btn" id="btnLibrary" onclick="toggleLibrary()" title="My Library">📂 Library</button>
         <button class="btn" onclick="openSavePlan()" title="Save Plan">💾 Plan</button>
         <button class="btn" onclick="openSaveLocation()" title="Save Location">💾 Location</button>
+        <button class="btn" id="btnTheme" onclick="toggleTheme()" title="Toggle light/dark mode">☀ Light</button>
       </div>
     </div>
 
@@ -605,8 +606,6 @@ html.light #ddDatePicker{background:var(--surface);border-color:var(--border);co
       <!-- hidden Phase btn kept for JS compat -->
       <button style="display:none" id="btnPhase" onclick="setDateMode('phase');toggleDateDropdown()"></button>
 
-      <!-- THEME TOGGLE pushed to far right -->
-      <button class="btn" id="btnTheme" onclick="toggleTheme()" title="Toggle light/dark mode" style="margin-left:auto">☀ Light</button>
 
       <!-- hidden btns kept for JS compat -->
       <button style="display:none" id="btnSun"></button>
