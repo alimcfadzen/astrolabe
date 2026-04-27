@@ -1,7 +1,7 @@
 <svg width="900" height="300" viewBox="0 0 900 300" xmlns="http://www.w3.org/2000/svg">
   <!-- Compass: light/beige palette -->
   <svg x="0" y="0" width="300" height="300" viewBox="50 50 600 600">
-    <circle cx="350" cy="350" r="300" fill="#e8ddd0"/>
+    <circle cx="350" cy="350" r="300" fill="#f5f2ee"/>
     <g transform="translate(350,350)">
       <line x1="0" y1="-290" x2="0" y2="-275" stroke="#b8956a" stroke-width="1.5" transform="rotate(0)"/>
       <line x1="0" y1="-290" x2="0" y2="-275" stroke="#b8956a" stroke-width="1.5" transform="rotate(30)"/>
@@ -42,7 +42,7 @@
     </g>
     <circle cx="350" cy="350" r="270" fill="none" stroke="#b8956a" stroke-width="1.5"/>
     <circle cx="350" cy="350" r="255" fill="none" stroke="#d4b896" stroke-width="0.8"/>
-    <circle cx="350" cy="350" r="250" fill="#ede8e0"/>
+    <circle cx="350" cy="350" r="250" fill="#ffffff"/>
     <circle cx="350" cy="350" r="250" fill="none" stroke="#d4b896" stroke-width="0.8"/>
     <line x1="350" y1="110" x2="350" y2="590" stroke="#d4b896" stroke-width="0.8"/>
     <line x1="110" y1="350" x2="590" y2="350" stroke="#d4b896" stroke-width="0.8"/>
