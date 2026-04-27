@@ -135,6 +135,8 @@ input[type=date]:focus{outline:none;border-color:rgba(0,0,0,.5)}
 /* Draggable marker cursor */
 .leaflet-marker-draggable{cursor:grab}
 .leaflet-marker-draggable:active{cursor:grabbing}
+.loc-star-marker{font-size:18px;color:#f59e0b;text-shadow:0 1px 3px rgba(0,0,0,.6);cursor:pointer;line-height:1;user-select:none;transition:transform .15s}
+.loc-star-marker:hover{transform:scale(1.3)}
 
 /* TIME BAR */
 #time-bar{position:absolute;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:0;z-index:500;display:block}
@@ -1334,6 +1336,7 @@ function initMap() {
   // Restore saved state (pins, toggles, etc.)
   const viewInfo = applyState(savedState);
   if (savedState && savedState.isSatellite) toggleMapStyle();
+  renderLocationMarkers();
   updateDateLabel();
   updateAzFinderLabel();
 
@@ -4807,6 +4810,28 @@ function savePlansStore(plans) {
 function loadLocations() {
   try { return JSON.parse(localStorage.getItem(LOCS_KEY) || '[]'); } catch { return []; }
 }
+
+let locationMarkerLayer = null;
+function renderLocationMarkers() {
+  if (!map) return;
+  if (!locationMarkerLayer) {
+    locationMarkerLayer = L.layerGroup().addTo(map);
+  }
+  locationMarkerLayer.clearLayers();
+  loadLocations().forEach(loc => {
+    if (loc.lat == null) return;
+    const icon = L.divIcon({
+      className: '',
+      html: `<div class="loc-star-marker" title="${loc.name}">★</div>`,
+      iconSize: [20, 20],
+      iconAnchor: [10, 10],
+      popupAnchor: [0, -14]
+    });
+    L.marker([loc.lat, loc.lon], { icon, interactive: true })
+      .bindPopup(`<strong>${loc.name}</strong><br><small>${loc.lat.toFixed(4)}°, ${loc.lon.toFixed(4)}°</small>`)
+      .addTo(locationMarkerLayer);
+  });
+}
 function saveLocationsStore(locs) {
   try { localStorage.setItem(LOCS_KEY, JSON.stringify(locs)); } catch {}
 }
@@ -5041,6 +5066,7 @@ function openSaveLocation() {
     locs.unshift(loc);
     saveLocationsStore(locs);
     renderLocationsPanel();
+    renderLocationMarkers();
     flashBtn('btnLibrary', '📂 Library ✓');
   });
 }
@@ -5051,12 +5077,14 @@ function saveSpotAsLocation(s) {
   locs.unshift({ id: Date.now(), name: `${name}, ${state}`, lat, lon, created: new Date().toISOString().slice(0,10) });
   saveLocationsStore(locs);
   renderLocationsPanel();
+  renderLocationMarkers();
   flashBtn('btnLibrary', '📂 Library ✓');
 }
 
 function deleteLocation(id) {
   saveLocationsStore(loadLocations().filter(l => l.id !== id));
   renderLocationsPanel();
+  renderLocationMarkers();
 }
 
 function loadLocationAsPin(loc, which) {
