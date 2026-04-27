@@ -1273,6 +1273,12 @@ function initMap() {
   map.on('click', onMapClick);
   map.on('mousemove', onMapHover);
   map.on('mouseout', hideTooltip);
+  map.on('movestart', () => {
+    const cv = document.getElementById('canvas');
+    if (cv) cv.getContext('2d').clearRect(0, 0, cv.width, cv.height);
+    const ch = document.getElementById('canvas-hover');
+    if (ch) ch.getContext('2d').clearRect(0, 0, ch.width, ch.height);
+  });
   map.on('moveend', () => { saveState(); redraw(); hideTooltip(); });
   map.on('zoomend', () => { yearCache=null; saveState(); redraw(); hideTooltip(); });
 
