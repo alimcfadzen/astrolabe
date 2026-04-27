@@ -1109,6 +1109,7 @@ function saveState() {
       lightMode: document.documentElement.classList.contains('light'),
       hiddenEvents: {...hiddenEvents},
       openPanels: getOpenPanels().filter(p => p !== 'library' && p !== 'azfinder'),
+      isSatellite: !!window.isSatellite,
     };
     localStorage.setItem(STORE_KEY, JSON.stringify(s));
   } catch(e) {}
@@ -1332,6 +1333,7 @@ function initMap() {
 
   // Restore saved state (pins, toggles, etc.)
   const viewInfo = applyState(savedState);
+  if (savedState && savedState.isSatellite) toggleMapStyle();
   updateDateLabel();
   updateAzFinderLabel();
 
@@ -1636,9 +1638,6 @@ function cancelPinMode() {
 function placeMarker(which, lat, lng) {
   // Will call drawAltGraph after to resize canvas with tide section
   if (which === 'a') {
-    dropPOIIfFar(lat, lng);
-    hiddenEvents.sunRise = false;
-    hiddenEvents.sunSet  = false;
     latA = lat; lonA = lng;
     if (markerA) map.removeLayer(markerA);
     markerA = L.marker([lat, lng], {
@@ -1650,7 +1649,6 @@ function placeMarker(which, lat, lng) {
     });
     markerA.on('dragend', e => {
       const newLat = e.target.getLatLng().lat, newLon = e.target.getLatLng().lng;
-      dropPOIIfFar(newLat, newLon);
       latA = newLat; lonA = newLon;
       yearCache = null; monthCache = null; _drivingFetchKey = ''; _drivingCache = null;
       updateInfoPanel(); updateObserverInfoPanel();
